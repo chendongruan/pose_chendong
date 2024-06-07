@@ -18,11 +18,10 @@ st.title("人体动作识别系统")
 uploaded_file = st.file_uploader("选择一个视频文件", type=["mp4", "avi", "mov"])
 
 def process_video(uploaded_file):
-    tfile = tempfile.NamedTemporaryFile(delete=False) 
+    tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(uploaded_file.read())
 
     cap = cv2.VideoCapture(tfile.name)
-
     frame_count = 0
     fps = cap.get(cv2.CAP_PROP_FPS)
     frames = []
@@ -42,7 +41,7 @@ def process_video(uploaded_file):
                 st.error("视频时长超过10秒，请上传一个更短的视频。")
                 cap.release()
                 os.remove(tfile.name)
-                return
+                return None, None
 
         # 降低分辨率
         frame = cv2.resize(frame, (640, 480))
