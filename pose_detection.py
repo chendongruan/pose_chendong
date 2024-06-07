@@ -3,6 +3,8 @@ import mediapipe as mp
 import streamlit as st
 import tempfile
 import os
+import gc
+import matplotlib.pyplot as plt
 
 # 初始化MediaPipe的姿态检测模型
 mp_pose = mp.solutions.pose
@@ -15,17 +17,35 @@ st.title("人体动作识别系统")
 # 上传视频文件
 uploaded_file = st.file_uploader("选择一个视频文件", type=["mp4", "avi", "mov"])
 
-if uploaded_file is not None:
+def process_video(uploaded_file):
     tfile = tempfile.NamedTemporaryFile(delete=False) 
     tfile.write(uploaded_file.read())
 
     cap = cv2.VideoCapture(tfile.name)
-    stframe = st.empty()
+
+    frame_count = 0
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frames = []
+    landmarks = []
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
+        
+        frame_count += 1
+
+        # 计算视频时长
+        if frame_count == 1:
+            video_duration = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) / fps
+            if video_duration > 10:
+                st.error("视频时长超过10秒，请上传一个更短的视频。")
+                cap.release()
+                os.remove(tfile.name)
+                return
+
+        # 降低分辨率
+        frame = cv2.resize(frame, (640, 480))
 
         # 将图像从BGR转换为RGB
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -34,17 +54,39 @@ if uploaded_file is not None:
         # 进行姿态检测
         results = pose.process(image)
 
-        # 将图像转换回BGR
-        image.flags.writeable = True
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-        # 绘制姿态检测结果
         if results.pose_landmarks:
-            mp_drawing.draw_landmarks(
-                image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+            landmarks.append(results.pose_landmarks)
+            frames.append(frame)
 
-        # 将图像显示在Streamlit中
-        stframe.image(image, channels='BGR')
+        # 强制垃圾回收
+        gc.collect()
 
     cap.release()
     os.remove(tfile.name)
+    
+    return frames, landmarks
+
+def plot_landmarks(landmark, ax):
+    ax.clear()
+    connections = mp_pose.POSE_CONNECTIONS
+    landmark_coords = [(lm.x, lm.y) for lm in landmark.landmark]
+    for connection in connections:
+        start_idx = connection[0]
+        end_idx = connection[1]
+        start_coords = landmark_coords[start_idx]
+        end_coords = landmark_coords[end_idx]
+        ax.plot([start_coords[0], end_coords[0]], [start_coords[1], end_coords[1]], 'r-')
+    ax.scatter(*zip(*landmark_coords), c='r', s=10)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(1, 0)
+    ax.set_aspect('equal')
+
+if uploaded_file is not None:
+    frames, landmarks = process_video(uploaded_file)
+    if landmarks:
+        st.sidebar.title("控制面板")
+        frame_idx = st.sidebar.slider("选择帧", 0, len(landmarks) - 1, 0)
+
+        fig, ax = plt.subplots()
+        plot_landmarks(landmarks[frame_idx], ax)
+        st.pyplot(fig)
