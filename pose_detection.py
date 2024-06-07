@@ -17,15 +17,17 @@ st.title("人体动作识别系统")
 # 上传视频文件
 uploaded_file = st.file_uploader("选择一个视频文件", type=["mp4", "avi", "mov"])
 
+landmarks = []
+
 def process_video(uploaded_file):
+    global landmarks
     tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(uploaded_file.read())
 
     cap = cv2.VideoCapture(tfile.name)
     frame_count = 0
     fps = cap.get(cv2.CAP_PROP_FPS)
-    frames = []
-    landmarks = []
+    frame_interval = 5  # 每隔5帧处理一次
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -41,7 +43,10 @@ def process_video(uploaded_file):
                 st.error("视频时长超过10秒，请上传一个更短的视频。")
                 cap.release()
                 os.remove(tfile.name)
-                return None, None
+                return
+
+        if frame_count % frame_interval != 0:
+            continue
 
         # 降低分辨率
         frame = cv2.resize(frame, (640, 480))
@@ -55,15 +60,12 @@ def process_video(uploaded_file):
 
         if results.pose_landmarks:
             landmarks.append(results.pose_landmarks)
-            frames.append(frame)
 
         # 强制垃圾回收
         gc.collect()
 
     cap.release()
     os.remove(tfile.name)
-    
-    return frames, landmarks
 
 def plot_landmarks(landmark, ax):
     ax.clear()
@@ -81,7 +83,7 @@ def plot_landmarks(landmark, ax):
     ax.set_aspect('equal')
 
 if uploaded_file is not None:
-    frames, landmarks = process_video(uploaded_file)
+    process_video(uploaded_file)
     if landmarks:
         st.sidebar.title("控制面板")
         frame_idx = st.sidebar.slider("选择帧", 0, len(landmarks) - 1, 0)
