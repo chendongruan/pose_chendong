@@ -5,6 +5,7 @@ import tempfile
 import os
 import gc
 import matplotlib.pyplot as plt
+import numpy as np
 
 # 初始化MediaPipe的姿态检测模型
 mp_pose = mp.solutions.pose
@@ -59,18 +60,19 @@ def process_video(uploaded_file):
         results = pose.process(image)
 
         if results.pose_landmarks:
-            landmarks.append(results.pose_landmarks)
+            landmarks.append([(lm.x, lm.y) for lm in results.pose_landmarks.landmark])
 
         # 强制垃圾回收
         gc.collect()
 
     cap.release()
     os.remove(tfile.name)
+    landmarks = np.array(landmarks)
 
-def plot_landmarks(landmark, ax):
+def plot_landmarks(landmarks, frame_idx, ax):
     ax.clear()
     connections = mp_pose.POSE_CONNECTIONS
-    landmark_coords = [(lm.x, lm.y) for lm in landmark.landmark]
+    landmark_coords = landmarks[frame_idx]
     for connection in connections:
         start_idx = connection[0]
         end_idx = connection[1]
@@ -84,10 +86,10 @@ def plot_landmarks(landmark, ax):
 
 if uploaded_file is not None:
     process_video(uploaded_file)
-    if landmarks:
+    if len(landmarks) > 0:
         st.sidebar.title("控制面板")
         frame_idx = st.sidebar.slider("选择帧", 0, len(landmarks) - 1, 0)
 
         fig, ax = plt.subplots()
-        plot_landmarks(landmarks[frame_idx], ax)
+        plot_landmarks(landmarks, frame_idx, ax)
         st.pyplot(fig)
