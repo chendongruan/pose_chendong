@@ -6,13 +6,24 @@ import os
 import gc
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 # Initialize MediaPipe's pose detection model
 mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
 
 # Streamlit interface
-st.title("Human Motion Recognition System")
+st.title("Human Motion Recognition System - Chendong\n\nAcknowledgements：AOU,FJTCM")
+st.markdown("""
+<style>
+    .main-title {
+        font-size: 24px !important;
+    }
+    .sub-title {
+        font-size: 14px !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Upload video file
 uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
@@ -97,3 +108,13 @@ if uploaded_file is not None:
         fig, ax = plt.subplots()
         plot_landmarks(landmarks, frame_idx, ax)
         st.pyplot(fig)
+        
+        # Download button for landmarks data
+        landmarks_df = pd.DataFrame(landmarks.reshape(-1, 33 * 2), columns=[f'landmark_{i}_{coord}' for i in range(33) for coord in ['x', 'y']])
+        csv = landmarks_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Landmarks Data as CSV",
+            data=csv,
+            file_name='landmarks.csv',
+            mime='text/csv'
+        )
