@@ -17,23 +17,22 @@ st.title("Human Motion Recognition System")
 # Upload video file
 uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
 
-landmarks = []
-
 @st.cache(allow_output_mutation=True)
 def load_model():
     return mp_pose.Pose()
 
 pose = load_model()
 
-def process_video(uploaded_file):
-    global landmarks
+@st.cache(allow_output_mutation=True)
+def process_video(file_data):
     tfile = tempfile.NamedTemporaryFile(delete=False)
-    tfile.write(uploaded_file.read())
+    tfile.write(file_data)
 
     cap = cv2.VideoCapture(tfile.name)
     frame_count = 0
     fps = cap.get(cv2.CAP_PROP_FPS)
     frame_interval = 5  # Process every 5 frames
+    landmarks = []
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -49,7 +48,7 @@ def process_video(uploaded_file):
                 st.error("Video duration exceeds 10 seconds, please upload a shorter video.")
                 cap.release()
                 os.remove(tfile.name)
-                return
+                return []
 
         if frame_count % frame_interval != 0:
             continue
@@ -72,7 +71,7 @@ def process_video(uploaded_file):
 
     cap.release()
     os.remove(tfile.name)
-    landmarks = np.array(landmarks)
+    return np.array(landmarks)
 
 def plot_landmarks(landmarks, frame_idx, ax):
     ax.clear()
@@ -90,7 +89,7 @@ def plot_landmarks(landmarks, frame_idx, ax):
     ax.set_aspect('equal')
 
 if uploaded_file is not None:
-    process_video(uploaded_file)
+    landmarks = process_video(uploaded_file.read())
     if len(landmarks) > 0:
         st.sidebar.title("Control Panel")
         frame_idx = st.sidebar.slider("Select Frame", 0, len(landmarks) - 1, 0)
