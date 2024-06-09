@@ -7,18 +7,23 @@ import gc
 import matplotlib.pyplot as plt
 import numpy as np
 
-# 初始化MediaPipe的姿态检测模型
+# Initialize MediaPipe's pose detection model
 mp_pose = mp.solutions.pose
-pose = mp_pose.Pose()
 mp_drawing = mp.solutions.drawing_utils
 
-# Streamlit界面
-st.title("人体动作识别系统")
+# Streamlit interface
+st.title("Human Motion Recognition System")
 
-# 上传视频文件
-uploaded_file = st.file_uploader("选择一个视频文件", type=["mp4", "avi", "mov"])
+# Upload video file
+uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
 
 landmarks = []
+
+@st.cache(allow_output_mutation=True)
+def load_model():
+    return mp_pose.Pose()
+
+pose = load_model()
 
 def process_video(uploaded_file):
     global landmarks
@@ -28,20 +33,20 @@ def process_video(uploaded_file):
     cap = cv2.VideoCapture(tfile.name)
     frame_count = 0
     fps = cap.get(cv2.CAP_PROP_FPS)
-    frame_interval = 5  # 每隔5帧处理一次
+    frame_interval = 5  # Process every 5 frames
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
-        
+
         frame_count += 1
 
-        # 计算视频时长
+        # Calculate video duration
         if frame_count == 1:
             video_duration = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) / fps
             if video_duration > 10:
-                st.error("视频时长超过10秒，请上传一个更短的视频。")
+                st.error("Video duration exceeds 10 seconds, please upload a shorter video.")
                 cap.release()
                 os.remove(tfile.name)
                 return
@@ -49,20 +54,20 @@ def process_video(uploaded_file):
         if frame_count % frame_interval != 0:
             continue
 
-        # 降低分辨率
+        # Reduce resolution
         frame = cv2.resize(frame, (640, 480))
 
-        # 将图像从BGR转换为RGB
+        # Convert the image from BGR to RGB
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image.flags.writeable = False
 
-        # 进行姿态检测
+        # Perform pose detection
         results = pose.process(image)
 
         if results.pose_landmarks:
             landmarks.append([(lm.x, lm.y) for lm in results.pose_landmarks.landmark])
 
-        # 强制垃圾回收
+        # Force garbage collection
         gc.collect()
 
     cap.release()
@@ -87,8 +92,8 @@ def plot_landmarks(landmarks, frame_idx, ax):
 if uploaded_file is not None:
     process_video(uploaded_file)
     if len(landmarks) > 0:
-        st.sidebar.title("控制面板")
-        frame_idx = st.sidebar.slider("选择帧", 0, len(landmarks) - 1, 0)
+        st.sidebar.title("Control Panel")
+        frame_idx = st.sidebar.slider("Select Frame", 0, len(landmarks) - 1, 0)
 
         fig, ax = plt.subplots()
         plot_landmarks(landmarks, frame_idx, ax)
