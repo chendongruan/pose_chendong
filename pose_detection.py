@@ -13,7 +13,7 @@ mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
 
 # Streamlit interface
-st.title("Human Motion Recognition System - Chendong\n\nAcknowledgements: AOU, FJTCM")
+st.title("Human Motion Recognition System - Chendong\n\nAcknowledgements: UOA, FJTCM")
 st.markdown("""
 <style>
     .main-title {
