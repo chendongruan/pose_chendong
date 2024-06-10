@@ -28,6 +28,12 @@ st.markdown("""
 # Upload video file
 uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "avi", "mov"])
 
+st.markdown("""
+ <div style="border:2px solid red; padding: 10px;">
+     <p>由于内存限制，目前该程序仅接受10秒内的视频进行分析。由于数据分析结果是二维的，最理想的情况是让受试者正对摄像头进行冠状面运动，否则您可能需要对数据进行进一步分析。</p>
+ </div>
+ """, unsafe_allow_html=True)
+
 @st.cache(allow_output_mutation=True)
 def load_model():
     return mp_pose.Pose()
