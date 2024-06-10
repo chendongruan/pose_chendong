@@ -13,7 +13,7 @@ mp_pose = mp.solutions.pose
 mp_drawing = mp.solutions.drawing_utils
 
 # Streamlit interface
-st.title("Human Motion Recognition System - Chendong\n\nAcknowledgements：AOU,FJTCM")
+st.title("Human Motion Recognition System - Chendong\n\nAcknowledgements: AOU, FJTCM")
 st.markdown("""
 <style>
     .main-title {
@@ -110,7 +110,23 @@ if uploaded_file is not None:
         st.pyplot(fig)
         
         # Download button for landmarks data
-        landmarks_df = pd.DataFrame(landmarks.reshape(-1, 33 * 2), columns=[f'landmark_{i}_{coord}' for i in range(33) for coord in ['x', 'y']])
+        column_names = [
+            "Nose_x", "Nose_y", "LeftEyeInner_x", "LeftEyeInner_y", "LeftEye_x", "LeftEye_y",
+            "LeftEyeOuter_x", "LeftEyeOuter_y", "RightEyeInner_x", "RightEyeInner_y",
+            "RightEye_x", "RightEye_y", "RightEyeOuter_x", "RightEyeOuter_y", "LeftEar_x", 
+            "LeftEar_y", "RightEar_x", "RightEar_y", "MouthLeft_x", "MouthLeft_y", 
+            "MouthRight_x", "MouthRight_y", "LeftShoulder_x", "LeftShoulder_y", 
+            "RightShoulder_x", "RightShoulder_y", "LeftElbow_x", "LeftElbow_y", 
+            "RightElbow_x", "RightElbow_y", "LeftWrist_x", "LeftWrist_y", "RightWrist_x", 
+            "RightWrist_y", "LeftPinky_x", "LeftPinky_y", "RightPinky_x", "RightPinky_y", 
+            "LeftIndex_x", "LeftIndex_y", "RightIndex_x", "RightIndex_y", "LeftThumb_x", 
+            "LeftThumb_y", "RightThumb_x", "RightThumb_y", "LeftHip_x", "LeftHip_y", 
+            "RightHip_x", "RightHip_y", "LeftKnee_x", "LeftKnee_y", "RightKnee_x", 
+            "RightKnee_y", "LeftAnkle_x", "LeftAnkle_y", "RightAnkle_x", "RightAnkle_y", 
+            "LeftHeel_x", "LeftHeel_y", "RightHeel_x", "RightHeel_y", "LeftFootIndex_x", 
+            "LeftFootIndex_y", "RightFootIndex_x", "RightFootIndex_y"
+        ]
+        landmarks_df = pd.DataFrame(landmarks.reshape(-1, 33 * 2), columns=column_names)
         csv = landmarks_df.to_csv(index=False).encode('utf-8')
         st.download_button(
             label="Download Landmarks Data as CSV",
