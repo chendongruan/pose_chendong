@@ -134,3 +134,10 @@ if uploaded_file is not None:
             file_name='landmarks.csv',
             mime='text/csv'
         )
+
+        # Add contact information
+        st.markdown("""
+        <div style="border:2px solid red; padding: 10px;">
+            <p>如果您是物理治疗师或从事动作评估相关职业，并对该程序有任何需求或反馈，请随时发送邮件至 chendongruan@gmail.com 或关注微信公众号“晨东康复说”留言。希望我们的合作能使这个程序帮助到更多人。</p>
+        </div>
+        """, unsafe_allow_html=True)
